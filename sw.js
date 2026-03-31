@@ -33,6 +33,6 @@ self.addEventListener('fetch', e => {
         }
         return res;
       });
-    }).catch(() => caches.match('/tasks/todo_calendar_database.html'))
+    }).catch(() => caches.match('/tasks/index.html'))
   );
 });
