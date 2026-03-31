@@ -1,6 +1,6 @@
 const CACHE = 'tasks-v1';
 const ASSETS = [
-  '/tasks/todo_calendar_database.html',
+  '/tasks/index.html',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js'
