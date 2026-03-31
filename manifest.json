@@ -2,7 +2,7 @@
   "name": "Tasks & Calendar",
   "short_name": "Tasks",
   "description": "Personal task manager and calendar",
-  "start_url": "/tasks/todo_calendar_database.html",
+  "start_url": "/tasks/index.html",
   "scope": "/tasks/",
   "display": "standalone",
   "background_color": "#ffffff",
