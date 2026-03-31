@@ -1,0 +1,23 @@
+{
+  "name": "Tasks & Calendar",
+  "short_name": "Tasks",
+  "description": "Personal task manager and calendar",
+  "start_url": "/tasks/todo_calendar_database.html",
+  "scope": "/tasks/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "beach.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "beach.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
