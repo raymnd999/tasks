@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tasks & Calendar</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f4;--bg3:#eeede9;
+  --text:#1a1a1a;--text2:#6b6b6b;--text3:#a0a0a0;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+  --info-bg:#E6F1FB;--info-text:#0C447C;--info-border:#185FA5;
+  --success-bg:#EAF3DE;--success-text:#27500A;--success-border:#3B6D11;
+  --danger-bg:#FCEBEB;--danger-text:#A32D2D;--danger-border:#791F1F;
+  --r:8px;--r2:12px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1e1e1c;--bg2:#2a2a28;--bg3:#333330;
+  --text:#f0efe8;--text2:#a0a09a;--text3:#666660;
+  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+  --info-bg:#042C53;--info-text:#B5D4F4;--info-border:#185FA5;
+  --success-bg:#173404;--success-text:#C0DD97;--success-border:#3B6D11;
+  --danger-bg:#501313;--danger-text:#F7C1C1;--danger-border:#791F1F;
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;padding:1.5rem}
+.app{max-width:780px;margin:0 auto;background:var(--bg);border-radius:var(--r2);border:0.5px solid var(--border);overflow:hidden}
+.tabs{display:flex;border-bottom:0.5px solid var(--border);padding:0 1rem}
+.tab{padding:12px 18px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);transition:color 0.15s}
+.tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500}
+.tab:hover:not(.active){color:var(--text)}
+.panel{display:none;padding:1.25rem}
+.panel.active{display:block}
+
+.add-row{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.add-row input[type=text]{flex:1;min-width:160px;height:36px;padding:0 10px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:13px;background:var(--bg);color:var(--text);outline:none}
+.add-row input[type=text]:focus{border-color:var(--info-border)}
+.add-row select,.add-row input[type=date]{height:36px;padding:0 8px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:13px;background:var(--bg);color:var(--text2);outline:none}
+.add-row input[type=date]{min-width:130px}
+.add-row button{height:36px;padding:0 14px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:13px;cursor:pointer;background:var(--bg);color:var(--text);white-space:nowrap}
+.add-row button:hover{background:var(--bg2)}
+.filters{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.filter-btn{padding:4px 10px;border:0.5px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;background:transparent;color:var(--text2)}
+.filter-btn.active{background:var(--bg2);color:var(--text);border-color:var(--border2)}
+.filter-btn:hover:not(.active){color:var(--text)}
+.task-list{display:flex;flex-direction:column;gap:6px}
+.task-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--r);background:var(--bg);transition:border-color 0.15s}
+.task-item:hover{border-color:var(--border2)}
+.task-item.done{opacity:0.5}
+.task-item.done .task-title{text-decoration:line-through}
+.check{width:16px;height:16px;border:0.5px solid var(--border2);border-radius:4px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px}
+.check.checked{background:var(--success-bg);border-color:var(--success-border);color:var(--success-text)}
+.task-title{flex:1;font-size:13px;color:var(--text)}
+.task-meta{display:flex;gap:6px;align-items:center}
+.badge{font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500}
+.badge.personal{background:#EEEDFE;color:#3C3489}
+.badge.fitness{background:#EAF3DE;color:#27500A}
+.badge.food{background:#FAECE7;color:#993C1D}
+.badge.education{background:#E6F1FB;color:#0C447C}
+.badge.event{background:#FAEEDA;color:#633806}
+.badge.travel{background:#FBEAF0;color:#72243E}
+.badge.finance{background:#E1F5EE;color:#085041}
+.badge.redlight{background:#FCEBEB;color:#A32D2D}
+.badge.other{background:#F1EFE8;color:#444441}
+@media(prefers-color-scheme:dark){
+.badge.personal{background:#26215C;color:#CECBF6}
+.badge.fitness{background:#173404;color:#C0DD97}
+.badge.food{background:#4A1B0C;color:#F0997B}
+.badge.education{background:#042C53;color:#B5D4F4}
+.badge.event{background:#412402;color:#FAC775}
+.badge.travel{background:#4B1528;color:#F4C0D1}
+.badge.finance{background:#04342C;color:#9FE1CB}
+.badge.redlight{background:#501313;color:#F7C1C1}
+.badge.other{background:#2C2C2A;color:#D3D1C7}
+}
+.date-label{font-size:11px;color:var(--text3)}
+.overdue{color:var(--danger-text) !important}
+.del-btn,.edit-btn,.move-btn{width:20px;height:20px;border:none;background:none;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:4px;opacity:0;line-height:1;flex-shrink:0}
+.task-item:hover .del-btn,.task-item:hover .edit-btn,.task-item:hover .move-btn{opacity:1}
+.move-btn{color:var(--text3);font-size:11px}
+.move-btn:hover{color:var(--text);background:var(--bg2)}
+.move-btn:disabled{opacity:0.15 !important;cursor:default}
+.del-btn{color:var(--text3);font-size:16px}
+.del-btn:hover{color:var(--danger-text);background:var(--danger-bg)}
+.edit-btn{color:var(--text3)}
+.edit-btn:hover{color:var(--info-text);background:var(--info-bg)}
+.task-item.editing{border-color:var(--info-border);flex-wrap:wrap;align-items:stretch}
+.edit-fields{display:flex;gap:6px;width:100%;flex-wrap:wrap;padding-top:8px;border-top:0.5px solid var(--border);margin-top:4px}
+.edit-fields input[type=text]{flex:1;min-width:140px;height:32px;padding:0 8px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:12px;background:var(--bg);color:var(--text);outline:none}
+.edit-fields input[type=text]:focus{border-color:var(--info-border)}
+.edit-fields select,.edit-fields input[type=date]{height:32px;padding:0 8px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:12px;background:var(--bg);color:var(--text2);outline:none}
+.edit-fields input[type=date]{min-width:120px}
+.save-btn{height:32px;padding:0 12px;border:0.5px solid var(--info-border);border-radius:var(--r);font-size:12px;cursor:pointer;background:var(--info-bg);color:var(--info-text);white-space:nowrap}
+.save-btn:hover{opacity:0.85}
+.cancel-btn{height:32px;padding:0 10px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:12px;cursor:pointer;background:transparent;color:var(--text2);white-space:nowrap}
+.cancel-btn:hover{background:var(--bg2)}
+.empty{text-align:center;padding:2rem;color:var(--text3);font-size:13px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem}
+.stat{background:var(--bg2);border-radius:var(--r);padding:10px 12px;text-align:center}
+.stat-n{font-size:20px;font-weight:500;color:var(--text)}
+.stat-l{font-size:11px;color:var(--text2);margin-top:2px}
+
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.cal-header h3{font-size:15px;font-weight:500;color:var(--text)}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{width:28px;height:28px;border:0.5px solid var(--border2);border-radius:var(--r);cursor:pointer;background:transparent;color:var(--text);font-size:14px;display:flex;align-items:center;justify-content:center}
+.cal-nav button:hover{background:var(--bg2)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day-label{text-align:center;font-size:11px;color:var(--text2);padding:4px 0;font-weight:500}
+.cal-cell{min-height:70px;border:0.5px solid var(--border);border-radius:var(--r);padding:6px;cursor:pointer;transition:border-color 0.15s;background:var(--bg)}
+.cal-cell:hover{border-color:var(--border2)}
+.cal-cell.today{border-color:var(--info-border);background:var(--info-bg)}
+.cal-cell.other-month{opacity:0.35}
+.cal-cell.selected{border-color:var(--border2);border-width:1.5px}
+.cal-date{font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px}
+.cal-cell.today .cal-date{color:var(--info-text)}
+.cal-dot{font-size:10px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px}
+.cal-detail{margin-top:1rem;border:0.5px solid var(--border);border-radius:var(--r);padding:12px}
+.cal-detail h4{font-size:13px;font-weight:500;margin-bottom:8px;color:var(--text)}
+.add-event{display:flex;gap:6px;margin-bottom:10px}
+.add-event input{flex:1;height:32px;padding:0 8px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:12px;background:var(--bg);color:var(--text);outline:none}
+.add-event input:focus{border-color:var(--info-border)}
+.add-event button{height:32px;padding:0 12px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:12px;cursor:pointer;background:var(--bg);color:var(--text)}
+.add-event button:hover{background:var(--bg2)}
+.event-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:12px;color:var(--text)}
+.event-item:last-child{border-bottom:none}
+.event-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.event-del{margin-left:auto;cursor:pointer;color:var(--text3);font-size:12px;opacity:0}
+.event-item:hover .event-del{opacity:1}
+.event-item:hover .event-del:hover{color:var(--danger-text)}
+
+@media(max-width:600px){
+  body{padding:0}
+  .app{border-radius:0;border-left:none;border-right:none;min-height:100vh}
+  .tabs{padding:0 0.5rem}
+  .tab{padding:10px 12px;font-size:12px}
+  .signout-btn{font-size:10px;padding:0 0.5rem}
+  #sync-status{display:none}
+  .panel{padding:0.75rem}
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:0.75rem}
+  .stat{padding:8px 10px}
+  .stat-n{font-size:16px}
+  .add-row{gap:6px}
+  .add-row input[type=text]{min-width:100%;height:40px;font-size:14px}
+  .add-row select,.add-row input[type=date]{height:40px;font-size:13px;flex:1}
+  .add-row button{height:40px;width:100%;font-size:14px}
+  .filters{gap:5px}
+  .filter-btn{padding:4px 8px;font-size:11px}
+  .task-item{padding:10px 8px;gap:8px}
+  .task-title{font-size:13px}
+  .badge{font-size:10px;padding:2px 6px}
+  .del-btn,.edit-btn,.move-btn{opacity:1}
+  .cal-cell{min-height:50px;padding:4px}
+  .cal-date{font-size:11px}
+  .cal-dot{font-size:9px}
+  .cal-detail{padding:10px}
+  .login-screen{padding:2.5rem 1.25rem}
+  .login-screen h2{font-size:16px}
+}
+
+@media(min-width:601px) and (max-width:860px){
+  body{padding:0.75rem}
+  .app{max-width:100%}
+  .add-row input[type=text]{min-width:120px}
+  .cal-cell{min-height:60px}
+  .stats-row{gap:6px}
+}
+.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 2rem;gap:1.5rem}
+.login-screen h2{font-size:18px;font-weight:500;color:var(--text)}
+.login-screen p{font-size:13px;color:var(--text2);text-align:center;max-width:280px;line-height:1.6}
+.google-btn{display:flex;align-items:center;gap:10px;padding:10px 20px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:13px;cursor:pointer;background:var(--bg);color:var(--text);font-weight:500}
+.google-btn:hover{background:var(--bg2)}
+.google-btn svg{width:18px;height:18px;flex-shrink:0}
+.signout-btn{font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0 1rem;align-self:center}
+.signout-btn:hover{color:var(--text)}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+</head>
+<body>
+<div class="app">
+  <div id="login-screen" class="login-screen">
+    <h2>Tasks & Calendar</h2>
+    <p>Sign in with your Google account to access and sync your tasks.</p>
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Sign in with Google
+    </button>
+    <p id="login-error" style="color:var(--danger-text);font-size:12px;display:none"></p>
+  </div>
+
+  <div id="main-app" style="display:none">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('todo')">Tasks</div>
+    <div class="tab" onclick="switchTab('calendar')">Calendar</div>
+    <span id="sync-status" style="margin-left:auto;font-size:11px;color:var(--text3);align-self:center">Connecting…</span>
+    <button class="signout-btn" onclick="signOut()">Sign out</button>
+  </div>
+
+  <div class="panel active" id="todo-panel">
+    <div class="stats-row" id="stats"></div>
+    <div class="add-row">
+      <input type="text" id="task-input" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()">
+      <select id="cat-select">
+        <option value="personal">Personal</option>
+        <option value="fitness">Fitness</option>
+        <option value="food">Food</option>
+        <option value="education">Education</option>
+        <option value="event">Event</option>
+        <option value="travel">Travel</option>
+        <option value="finance">Finance</option>
+        <option value="redlight">Red Light</option>
+        <option value="other">Other</option>
+      </select>
+      <input type="date" id="due-input">
+      <button onclick="addTask()">+ Add</button>
+    </div>
+    <div class="filters">
+      <select id="filter-select" onchange="setFilter(this.value)" style="height:32px;padding:0 8px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:12px;background:var(--bg);color:var(--text2);outline:none;cursor:pointer">
+        <option value="active">Active</option>
+        <option value="done">Done</option>
+        <option value="all">All tasks</option>
+        <option value="personal">Personal</option>
+        <option value="fitness">Fitness</option>
+        <option value="food">Food</option>
+        <option value="education">Education</option>
+        <option value="event">Event</option>
+        <option value="travel">Travel</option>
+        <option value="finance">Finance</option>
+        <option value="redlight">Red Light</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="task-list" id="task-list"></div>
+  </div>
+
+  <div class="panel" id="calendar-panel">
+    <div class="cal-header">
+      <h3 id="cal-title"></h3>
+      <div class="cal-nav">
+        <button onclick="changeMonth(-1)">&#8249;</button>
+        <button onclick="changeMonth(1)">&#8250;</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-detail" id="cal-detail" style="display:none"></div>
+  </div>
+  </div><!-- end main-app -->
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDbB8OjkE09D8cL1dxnmsSY2ABYOQmIgxU",
+  authDomain: "tasks-b9d32.firebaseapp.com",
+  databaseURL: "https://tasks-b9d32-default-rtdb.firebaseio.com",
+  projectId: "tasks-b9d32",
+  storageBucket: "tasks-b9d32.firebasestorage.app",
+  messagingSenderId: "307276386795",
+  appId: "1:307276386795:web:bfa01d8b59ad89f1fa09ae",
+  measurementId: "G-Y03GE8HMML"
+};
+firebase.initializeApp(firebaseConfig);
+
+const COLORS=['#378ADD','#7F77DD','#1D9E75','#D85A30','#D4537E','#639922','#BA7517'];
+let tasks=[];
+let events={};
+let filter='active';
+let calYear,calMonth,selDate;
+let loaded=false;
+let REF=null;
+let dbListener=null;
+
+function setStatus(msg,color){
+  const el=document.getElementById('sync-status');
+  if(el){el.textContent=msg;el.style.color=color;}
+}
+
+function signInWithGoogle(){
+  const provider=new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).catch(err=>{
+    const el=document.getElementById('login-error');
+    el.textContent='Sign-in failed: '+err.message;
+    el.style.display='block';
+  });
+}
+
+function signOut(){
+  if(dbListener&&REF){REF.off('value',dbListener);}
+  firebase.auth().signOut();
+}
+
+firebase.auth().onAuthStateChanged(user=>{
+  if(user){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main-app').style.display='block';
+    setStatus('Syncing…','var(--text3)');
+    REF=firebase.database().ref('users/'+user.uid+'/todo_app');
+    dbListener=REF.on('value',snap=>{
+      const data=snap.val()||{};
+      tasks=data.tasks||[];
+      events=data.events||{};
+      loaded=true;
+      setStatus('Synced','var(--text3)');
+      renderTasks();
+      if(document.getElementById('calendar-panel').classList.contains('active'))renderCal();
+    });
+  } else {
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('main-app').style.display='none';
+    loaded=false;
+    REF=null;
+    tasks=[];
+    events={};
+  }
+});
+
+function save(){
+  if(!loaded||!REF)return;
+  setStatus('Saving…','var(--text3)');
+  REF.set({tasks,events})
+    .then(()=>setStatus('Synced','var(--text3)'))
+    .catch(()=>setStatus('Save failed','var(--danger-text)'));
+}
+
+function today(){return new Date().toISOString().split('T')[0]}
+
+function initDateInput(){document.getElementById('due-input').value=today();}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['todo','calendar'][i]===t));
+  document.querySelectorAll('.panel').forEach(el=>el.classList.remove('active'));
+  document.getElementById(t+'-panel').classList.add('active');
+  if(t==='calendar')renderCal();
+}
+
+function setFilter(f){
+  filter=f;
+  renderTasks();
+}
+
+function addTask(){
+  const v=document.getElementById('task-input').value.trim();
+  if(!v)return;
+  tasks.push({id:Date.now(),title:v,cat:document.getElementById('cat-select').value,due:document.getElementById('due-input').value,done:false,created:today()});
+  document.getElementById('task-input').value='';
+  document.getElementById('due-input').value=today();
+  save();renderTasks();
+}
+
+let editingId=null;
+
+function toggleTask(id){
+  const t=tasks.find(x=>x.id===id);if(t)t.done=!t.done;save();renderTasks();
+}
+
+function deleteTask(id){
+  tasks=tasks.filter(x=>x.id!==id);save();renderTasks();
+}
+
+function editTask(id){
+  editingId=id;renderTasks();
+  setTimeout(()=>{const el=document.getElementById('edit-title-'+id);if(el){el.focus();el.select();}},50);
+}
+
+function cancelEdit(){editingId=null;renderTasks();}
+
+function saveTask(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  const v=document.getElementById('edit-title-'+id).value.trim();
+  if(!v)return;
+  t.title=v;
+  t.cat=document.getElementById('edit-cat-'+id).value;
+  t.due=document.getElementById('edit-due-'+id).value;
+  editingId=null;save();renderTasks();
+}
+
+function moveTask(id,dir){
+  const idx=tasks.findIndex(x=>x.id===id);
+  if(idx===-1)return;
+  const swap=idx+dir;
+  if(swap<0||swap>=tasks.length)return;
+  [tasks[idx],tasks[swap]]=[tasks[swap],tasks[idx]];
+  save();renderTasks();
+}
+
+function renderTasks(){
+  const td=today();
+  let list=tasks.filter(t=>{
+    if(filter==='active')return !t.done;
+    if(filter==='done')return t.done;
+    if(['personal','fitness','food','education','event','travel','finance','redlight','other'].includes(filter))return t.cat===filter;
+    return true;
+  });
+  list=[...list].sort((a,b)=>{
+    if(a.due&&b.due)return a.due.localeCompare(b.due);
+    if(a.due&&!b.due)return -1;
+    if(!a.due&&b.due)return 1;
+    return a.id-b.id;
+  });
+  const el=document.getElementById('task-list');
+  if(!list.length){el.innerHTML='<div class="empty">No tasks here yet</div>';renderStats();return;}
+  el.innerHTML=list.map((t,i)=>{
+    const ov=!t.done&&t.due&&t.due<td;
+    const isEditing=editingId===t.id;
+    const editRow=isEditing?`
+      <div class="edit-fields">
+        <input type="text" id="edit-title-${t.id}" value="${t.title.replace(/"/g,'&quot;')}" onkeydown="if(event.key==='Enter')saveTask(${t.id});if(event.key==='Escape')cancelEdit()">
+        <select id="edit-cat-${t.id}">
+          <option value="personal"${t.cat==='personal'?' selected':''}>Personal</option>
+          <option value="fitness"${t.cat==='fitness'?' selected':''}>Fitness</option>
+          <option value="food"${t.cat==='food'?' selected':''}>Food</option>
+          <option value="education"${t.cat==='education'?' selected':''}>Education</option>
+          <option value="event"${t.cat==='event'?' selected':''}>Event</option>
+          <option value="travel"${t.cat==='travel'?' selected':''}>Travel</option>
+          <option value="finance"${t.cat==='finance'?' selected':''}>Finance</option>
+          <option value="redlight"${t.cat==='redlight'?' selected':''}>Red Light</option>
+          <option value="other"${t.cat==='other'?' selected':''}>Other</option>
+        </select>
+        <input type="date" id="edit-due-${t.id}" value="${t.due||''}">
+        <button class="save-btn" onclick="saveTask(${t.id})">Save</button>
+        <button class="cancel-btn" onclick="cancelEdit()">Cancel</button>
+      </div>`:'';
+    const globalIdx=tasks.findIndex(x=>x.id===t.id);
+    return`<div class="task-item${t.done?' done':''}${isEditing?' editing':''}">
+      <div style="display:flex;flex-direction:column;gap:1px;flex-shrink:0">
+        <button class="move-btn" onclick="moveTask(${t.id},-1)"${globalIdx===0?' disabled':''}>&#9650;</button>
+        <button class="move-btn" onclick="moveTask(${t.id},1)"${globalIdx===tasks.length-1?' disabled':''}>&#9660;</button>
+      </div>
+      <div class="check${t.done?' checked':''}" onclick="toggleTask(${t.id})">${t.done?'&#10003;':''}</div>
+      <span class="task-title">${t.title}</span>
+      <div class="task-meta">
+        ${t.due?`<span class="date-label${ov?' overdue':''}">${t.due}</span>`:''}
+        <span class="badge ${t.cat}">${t.cat}</span>
+      </div>
+      <button class="edit-btn" onclick="editTask(${t.id})" title="Edit">&#9998;</button>
+      <button class="del-btn" onclick="deleteTask(${t.id})">&#215;</button>
+      ${editRow}
+    </div>`;
+  }).join('');
+  renderStats();
+}
+
+function renderStats(){
+  const td=today();
+  const total=tasks.length,done=tasks.filter(t=>t.done).length,active=tasks.filter(t=>!t.done).length,ov=tasks.filter(t=>!t.done&&t.due&&t.due<td).length;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">Total</div></div>
+    <div class="stat"><div class="stat-n">${active}</div><div class="stat-l">Active</div></div>
+    <div class="stat"><div class="stat-n">${done}</div><div class="stat-l">Done</div></div>
+    <div class="stat"><div class="stat-n"${ov?' style="color:var(--danger-text)"':''}>${ov}</div><div class="stat-l">Overdue</div></div>`;
+}
+
+function initCal(){const n=new Date();calYear=n.getFullYear();calMonth=n.getMonth();}
+function changeMonth(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCal();}
+
+function renderCal(){
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-title').textContent=months[calMonth]+' '+calYear;
+  const grid=document.getElementById('cal-grid');
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html=days.map(d=>`<div class="cal-day-label">${d}</div>`).join('');
+  const first=new Date(calYear,calMonth,1).getDay();
+  const last=new Date(calYear,calMonth+1,0).getDate();
+  const td=today();
+  for(let i=0;i<first;i++){
+    const d=new Date(calYear,calMonth,0-first+i+2);
+    html+=`<div class="cal-cell other-month"><div class="cal-date">${d.getDate()}</div></div>`;
+  }
+  for(let d=1;d<=last;d++){
+    const ds=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const isToday=ds===td,isSel=ds===selDate;
+    const evs=events[ds]||[];
+    const tks=tasks.filter(t=>t.due===ds);
+    const dots=[...evs.map(e=>`<div class="cal-dot" style="color:${e.color}">${e.title}</div>`),...tks.map(t=>`<div class="cal-dot"${t.done?' style="text-decoration:line-through;opacity:0.4"':''}>&#183; ${t.title}</div>`)].join('');
+    html+=`<div class="cal-cell${isToday?' today':''}${isSel?' selected':''}" onclick="selectDay('${ds}')">
+      <div class="cal-date">${d}</div>${dots}
+    </div>`;
+  }
+  grid.innerHTML=html;
+  if(selDate)showDayDetail(selDate);
+}
+
+function selectDay(ds){selDate=ds;renderCal();}
+
+function showDayDetail(ds){
+  const detail=document.getElementById('cal-detail');
+  const evs=events[ds]||[];
+  const tks=tasks.filter(t=>t.due===ds);
+  const d=new Date(ds+'T12:00:00');
+  const label=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  let html=`<h4>${label}</h4>
+    <div class="add-event">
+      <input type="text" id="ev-input" placeholder="Add event..." onkeydown="if(event.key==='Enter')addEvent('${ds}')">
+      <button onclick="addEvent('${ds}')">Add</button>
+    </div>`;
+  if(evs.length){
+    html+=evs.map((e,i)=>`<div class="event-item"><span class="event-dot" style="background:${e.color}"></span>${e.title}<span class="event-del" onclick="deleteEvent('${ds}',${i})">&#215;</span></div>`).join('');
+  }
+  if(tks.length){
+    html+=`<div style="margin-top:8px;font-size:11px;color:var(--text2);margin-bottom:4px">Tasks due</div>`;
+    html+=tks.map(t=>`<div class="event-item"><span class="event-dot" style="background:var(--border2)"></span><span${t.done?' style="text-decoration:line-through;opacity:0.5"':''}>${t.title}</span><span class="badge ${t.cat}" style="margin-left:auto;font-size:10px">${t.cat}</span></div>`).join('');
+  }
+  if(!evs.length&&!tks.length)html+=`<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px 0">Nothing scheduled</div>`;
+  detail.innerHTML=html;detail.style.display='block';
+}
+
+function addEvent(ds){
+  const v=document.getElementById('ev-input').value.trim();if(!v)return;
+  if(!events[ds])events[ds]=[];
+  const color=COLORS[events[ds].length%COLORS.length];
+  events[ds].push({title:v,color});save();renderCal();
+}
+
+function deleteEvent(ds,i){
+  events[ds].splice(i,1);if(!events[ds].length)delete events[ds];save();renderCal();
+}
+
+initCal();renderTasks();initDateInput();
+</script>
+</body>
+</html>
